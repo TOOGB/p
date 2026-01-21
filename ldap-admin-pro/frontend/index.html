@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LDAP Admin Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            padding: 20px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #e2e8f0;
+            color: #667eea;
+        }
+
+        .nav-item.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .connection-form {
+            background: #f8fafc;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .tree-view {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .tree-node {
+            padding: 10px;
+            margin: 4px 0;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .tree-node:hover {
+            background: #e2e8f0;
+        }
+
+        .tree-node.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .tree-children {
+            margin-left: 24px;
+            border-left: 2px solid #e2e8f0;
+            padding-left: 12px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8fafc;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 22px;
+            color: #1e293b;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .attribute-list {
+            margin-top: 16px;
+        }
+
+        .attribute-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .attribute-key {
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .attribute-value {
+            color: #64748b;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            padding: 12px;
+            background: #f8fafc;
+            border-left: 4px solid #667eea;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .log-time {
+            color: #64748b;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                LDAP Admin Pro
+            </h1>
+            <div class="connection-status">
+                <div class="status-dot"></div>
+                <span id="statusText">Connecté</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="nav-item active" onclick="showSection('dashboard')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    Tableau de bord
+                </div>
+                <div class="nav-item" onclick="showSection('connection')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    Connexion
+                </div>
+                <div class="nav-item" onclick="showSection('browse')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3h7l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                    </svg>
+                    Parcourir
+                </div>
+                <div class="nav-item" onclick="showSection('users')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Utilisateurs
+                </div>
+                <div class="nav-item" onclick="showSection('groups')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                    Groupes
+                </div>
+                <div class="nav-item" onclick="showSection('search')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    Recherche avancée
+                </div>
+                <div class="nav-item" onclick="showSection('schema')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="9" y1="3" x2="9" y2="21"/>
+                    </svg>
+                    Schéma
+                </div>
+                <div class="nav-item" onclick="showSection('logs')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    Journaux
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Dashboard -->
+                <div id="dashboard" class="section active">
+                    <h2 style="margin-bottom: 24px; color: #1e293b;">Tableau de bord</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">1,247</div>
+                            <div class="stat-label">Utilisateurs totaux</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            <div class="stat-value">89</div>
+                            <div class="stat-label">Groupes actifs</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                            <div class="stat-value">34</div>
+                            <div class="stat-label">Unités organisationnelles</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                            <div class="stat-value">5.2k</div>
+                            <div class="stat-label">Entrées LDAP</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                            Activité récente
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Utilisateur</th>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Création utilisateur</td>
+                                    <td>jean.dupont@example.com</td>
+                                    <td>Il y a 5 min</td>
+                                    <td><span class="badge badge-success">Succès</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Modification groupe</td>
+                                    <td>admin@example.com</td>
+                                    <td>Il y a 12 min</td>
+                                    <td><span class="badge badge-success">Succès</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Tentative connexion</td>
+                                    <td>marie.martin@example.com</td>
+                                    <td>Il y a 28 min</td>
+                                    <td><span class="badge badge-warning">Échec</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Connection -->
+                <div id="connection" class="section">
+                    <h2 style="margin-bottom: 24px; color: #1e293b;">Configuration de connexion</h2>
+                    
+                    <div class="connection-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Serveur LDAP</label>
+                                <input type="text" value="ldap.example.com" placeholder="ldap.example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Port</label>
+                                <input type="number" value="389" placeholder="389">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>DN de base</label>
+                                <input type="text" value="dc=example,dc=com" placeholder="dc=example,dc=com">
+                            </div>
+                            <div class="form-group">
+                                <label>Protocole</label>
+                                <select>
+                                    <option>LDAP</option>
+                                    <option selected>LDAPS (SSL)</option>
+                                    <option>LDAP + StartTLS</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Bind DN</label>
+                                <input type="text" value="cn=admin,dc=example,dc=com">
+                            </div>
+                            <div class="form-group">
+                                <label>Mot de passe</label>
+                                <input type="password" value="********">
+                            </div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="testConnection()">Tester la connexion</button>
+                            <button class="btn btn-success">Enregistrer</button>
+                            <button class="btn btn-secondary">Réinitialiser</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Browse -->
+                <div id="browse" class="section">
+                    <h2 style="margin-bottom: 24px; color: #1e293b;">Parcourir l'arborescence LDAP</h2>
+                    
+                    <div class="search-bar">
+                        <input type="text" placeholder="Filtrer l'arborescence...">
+                        <button class="btn btn-primary">Rafraîchir</button>
+                        <button class="btn btn-success" onclick="showModal('addEntry')">Nouvelle entrée</button>
+                    </div>
+                    
+                    <div class="tree-view" id="ldapTree">
+                        <div class="tree-node" onclick="selectNode(this)">
+                            📁 dc=example,dc=com
+                            <div class="tree-children">
+                                <div class="tree-node" onclick="selectNode(this); event.stopPropagation();">
+                                    📁 ou=users
+                                    <div class="tree-children">
+                                        <div class="tree-node" onclick="selectNode(this); event.stopPropagation();">👤 cn=Jean Dupont</div>
+                                        <div class="tree-node" onclick="selectNode(this); event.stopPropagation();">👤 cn=Marie Martin</div>
+                                        <div class="tree-node" onclick="selectNode(this); event.stopPropagation();">👤 cn=Pierre Dubois</div>
+                                    </div>
+                                </div>
+                                <div class="tree-node" onclick="selectNode(this); event.stopPropagation();">
+                                    📁 ou=groups
+                                    <div class="tree-children">
+                                        <div class="tree-node" onclick="selectNode(this); event.stopPropagation();">👥 cn=Administrators</div>
+                                        <div class="tree-node" onclick="selectNode(this); event.stopPropagation();">👥 cn=Developers</div>
+                                        <div class="tree-node" onclick="selectNode(this); event.stopPropagation();">👥 cn=Sales</div>
+                                    </div>
+                                </div>
+                                <div class="tree-node" onclick="selectNode(this); event.stopPropagation();">
+                                    📁 ou=departments
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users -->
+                <div id="users" class="section">
+                    <h2 style="margin-bottom: 24px; color: #1e293b;">Gestion des utilisateurs</h2>
+                    
+                    <div class="search-bar">
+                        <input type="text" placeholder="Rechercher un utilisateur...">
+                        <button class="btn btn-primary">Rechercher</button>
+                        <button class="btn btn-success" onclick="showModal('addUser')">Nouvel utilisateur</button>
+                    </div>
+                    
+                    <div class="card">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>UID</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Jean Dupont</td>
+                                    <td>jean.dupont@example.com</td>
+                                    <td>1001</td>
+                                    <td><span class="badge badge-success">Actif</span></td>
+                                    <td>
+                                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="showModal('editUser')">Éditer</button>
+                                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">Supprimer</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Marie Martin</td>
+                                    <td>marie.martin@example.com</td>
+                                    <td>1002</td>
+                                    <td><span class="badge badge-success">Actif</span></td>
+                                    <td>
+                                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="showModal('editUser')">Éditer</button>
+                                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">Supprimer</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Pierre Dubois</td>
+                                    <td>pierre.dubois@example.com</td>
+                                    <td>1003</td>
+                                    <td><span class="badge badge-warning">Désactivé</span></td>
+                                    <td>
+                                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="showModal('editUser')">Éditer</button>
+                                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">Supprimer</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Groups -->
+                <div id="groups" class="section">
+                    <h2 style="margin-bottom: 24px; color: #1e293b;">Gestion des groupes</h2>
+                    
+                    <div class="search-bar">
+                        <input type="text" placeholder="Rechercher un groupe...">
+                        <button class="btn btn-primary">Rechercher</button>
+                        <button class="btn btn-success" onclick="showModal('addGroup')">Nouveau groupe</button>
+                    </div>
+                    
+                    <div class="card">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nom du groupe</th>
+                                    <th>GID</th>
+                                    <th>Membres</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Administrators</td>
+                                    <td>2001</td>
+                                    <td><span class="badge badge-info">5 membres</span></td>
+                                    <td>Administrateurs système</td>
+                                    <td>
+                                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">Éditer</button>
+                                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">Supprimer</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Developers</td>
+                                    <td>2002</td>
+                                    <td><span class="badge badge-info">12 membres</span></td>
+                                    <td>Équipe de développement</td>
+                                    <td>
+                                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">Éditer</button>
+                                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">Supprimer</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Sales</td>
+                                    <td>2003</td>
+                                    <td><span class="badge badge-info">8 membres</span></td>
+                                    <td>Équipe commerciale</td>
+                                    <td>
+                                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">Éditer

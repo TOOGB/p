@@ -1,0 +1,50 @@
+# Certificats et clés SSL
+ldap/certs/
+*.crt
+*.key
+*.pem
+
+# Variables d'environnement
+.env
+api/.env
+*.env.local
+
+# Fichiers de backup
+backup_*.ldif
+backup_*.sql
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# Fichiers temporaires
+tmp/
+temp/
