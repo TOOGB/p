@@ -48,3 +48,4 @@ logs/
 # Fichiers temporaires
 tmp/
 temp/
+ldap/certs/
