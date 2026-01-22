@@ -2,7 +2,7 @@
 FROM node:18-alpine
 
 # Installation des dépendances système
-RUN apk add --no-cache make gcc g++ python3\
+RUN apk add --no-cache \
     openldap-clients \
     curl \
     bash
