@@ -1,0 +1,124 @@
+# docker-compose.yml
+
+services:
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: openldap
+    environment:
+      LDAP_ORGANISATION: Example Company
+      LDAP_DOMAIN: example.com
+      LDAP_BASE_DN: dc=example,dc=com
+      LDAP_ADMIN_PASSWORD: admin
+      LDAP_TLS: "false"
+    ports:
+      - "1389:389"
+    networks:
+      - ldap-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: ldap-postgres
+    environment:
+      POSTGRES_DB: ldap_admin
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - ldap-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d ldap_admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ldap-redis
+    command: redis-server --requirepass redispass123
+    ports:
+      - "6379:6379"
+    networks:
+      - ldap-network
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    container_name: ldap-api
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      LDAP_URL: ${LDAP_URL}
+      LDAP_BASE_DN: ${LDAP_BASE_DN}
+      LDAP_ADMIN_DN: ${LDAP_ADMIN_DN}
+      LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ldap_admin
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispass123
+      JWT_SECRET: dev-secret-key-change-in-production
+      JWT_EXPIRATION: 8h
+      CORS_ORIGIN: "*"
+    extra_hosts:
+      - "spoutnik2.in.cnous.fr:10.252.3.3"
+    volumes:
+      - ./api:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - "3000:3000"
+    networks:
+      - ldap-network
+    depends_on:
+      - openldap
+      - postgres
+      - redis
+    restart: unless-stopped
+    command: npm run dev
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: ldap-phpldapadmin
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: spoutnik2.in.cnous.fr
+      PHPLDAPADMIN_HTTPS: "false"
+      PHPLDAPADMIN_LDAP_CLIENT_TLS: "false"
+    extra_hosts:
+      - "spoutnik2.in.cnous.fr:10.252.3.3"
+    ports:
+      - "8080:80"
+    networks:
+      - ldap-network
+    depends_on:
+      - openldap
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: ldap-nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    ports:
+      - "80:80"
+    networks:
+      - ldap-network
+    depends_on:
+      - api
+    restart: unless-stopped
+
+networks:
+  ldap-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  ldap-data:
+  ldap-config:
