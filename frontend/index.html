@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LDAP Admin Pro - dc=cnous,dc=fr</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -36,12 +32,7 @@
             align-items: center;
         }
 
-        .header h1 {
-            font-size: 28px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .header h1 { font-size: 28px; display: flex; align-items: center; gap: 12px; }
 
         .connection-status {
             display: flex;
@@ -55,22 +46,15 @@
         }
 
         .status-dot {
-            width: 10px;
-            height: 10px;
+            width: 10px; height: 10px;
             border-radius: 50%;
             background: #4ade80;
             animation: pulse 2s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        .main-content {
-            display: flex;
-            min-height: 600px;
-        }
+        .main-content { display: flex; min-height: 600px; }
 
         .sidebar {
             width: 280px;
@@ -92,15 +76,8 @@
             font-weight: 500;
         }
 
-        .nav-item:hover {
-            background: #e2e8f0;
-            color: #667eea;
-        }
-
-        .nav-item.active {
-            background: #667eea;
-            color: white;
-        }
+        .nav-item:hover { background: #e2e8f0; color: #667eea; }
+        .nav-item.active { background: #667eea; color: white; }
 
         .content-area {
             flex: 1;
@@ -109,40 +86,14 @@
             max-height: calc(100vh - 140px);
         }
 
-        .section {
-            display: none;
-        }
+        .section { display: none; }
+        .section.active { display: block; }
 
-        .section.active {
-            display: block;
-        }
+        .connection-form { background: #f8fafc; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
 
-        .connection-form {
-            background: #f8fafc;
-            padding: 24px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group label {
-            font-weight: 600;
-            color: #334155;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 16px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: 600; color: #334155; margin-bottom: 8px; font-size: 14px; }
         .form-group input, .form-group select, .form-group textarea {
             padding: 10px 14px;
             border: 2px solid #e2e8f0;
@@ -150,11 +101,7 @@
             font-size: 14px;
             transition: border 0.2s;
         }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
 
         .btn {
             padding: 12px 24px;
@@ -165,58 +112,113 @@
             transition: all 0.2s;
             font-size: 14px;
         }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-secondary { background: #64748b; color: white; }
+        .btn-secondary:hover { background: #475569; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; background: #94a3b8 !important; }
+        .btn:disabled:hover { transform: none; box-shadow: none; }
 
-        .btn-primary {
+        /* ====== PAGINATION ====== */
+        .pagination-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 10px 14px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            margin: 12px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .pagination-info-text {
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .btn-page {
+            padding: 6px 10px;
+            font-size: 13px;
+            font-weight: 500;
+            background: white;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-width: 32px;
+        }
+
+        .btn-page:hover:not(:disabled) {
             background: #667eea;
             color: white;
+            border-color: #667eea;
         }
 
-        .btn-primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        .btn-page:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #f8fafc !important;
+            color: #94a3b8 !important;
+            border-color: #e2e8f0 !important;
         }
 
-        .btn-success {
-            background: #10b981;
-            color: white;
+        .btn-page-active {
+            background: #667eea !important;
+            color: white !important;
+            border-color: #667eea !important;
+            font-weight: 700;
         }
 
-        .btn-success:hover {
-            background: #059669;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-
-        .btn-secondary {
-            background: #64748b;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #475569;
-        }
-
-        .search-bar {
+        .page-numbers {
             display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
+            gap: 4px;
+            align-items: center;
         }
 
-        .search-bar input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
+        .page-ellipsis {
+            padding: 6px 4px;
+            color: #94a3b8;
+            font-size: 13px;
         }
+
+        .page-size-selector {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #475569;
+            margin-left: 8px;
+        }
+
+        .page-size-selector select {
+            padding: 4px 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .table-wrapper table { width: 100%; border-collapse: collapse; }
+
+        /* ====== FIN PAGINATION ====== */
+
+        .search-bar { display: flex; gap: 12px; margin-bottom: 24px; }
+        .search-bar input { flex: 1; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
 
         .tree-view {
             background: #f8fafc;
@@ -237,307 +239,57 @@
             gap: 8px;
             font-size: 14px;
         }
+        .tree-node:hover { background: #e2e8f0; }
+        .tree-node.selected { background: #667eea; color: white; }
+        .tree-toggle { width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; user-select: none; }
+        .tree-children { margin-left: 24px; border-left: 2px solid #e2e8f0; padding-left: 12px; margin-top: 4px; margin-bottom: 4px; }
+        .tree-children.collapsed { display: none; }
+        .tree-icon { font-size: 16px; }
+        .tree-label { flex: 1; }
+        .tree-dn { font-size: 11px; color: #64748b; font-family: monospace; }
+        .tree-node.selected .tree-dn { color: rgba(255,255,255,0.8); }
 
-        .tree-node:hover {
-            background: #e2e8f0;
-        }
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .card-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
 
-        .tree-node.selected {
-            background: #667eea;
-            color: white;
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .stat-value { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 14px; opacity: 0.9; }
 
-        .tree-toggle {
-            width: 16px;
-            height: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 12px;
-            user-select: none;
-        }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8fafc; padding: 12px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        tr:hover { background: #f8fafc; }
 
-        .tree-children {
-            margin-left: 24px;
-            border-left: 2px solid #e2e8f0;
-            padding-left: 12px;
-            margin-top: 4px;
-            margin-bottom: 4px;
-        }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
 
-        .tree-children.collapsed {
-            display: none;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 16px; padding: 30px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { font-size: 22px; color: #1e293b; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; }
 
-        .tree-icon {
-            font-size: 16px;
-        }
+        .attribute-list { margin-top: 16px; }
+        .attribute-item { display: flex; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; }
+        .attribute-key { font-weight: 600; color: #475569; }
+        .attribute-value { color: #64748b; word-break: break-all; }
+        .action-buttons { display: flex; gap: 12px; margin-top: 20px; }
 
-        .tree-label {
-            flex: 1;
-        }
+        .log-entry { padding: 12px; background: #f8fafc; border-left: 4px solid #667eea; margin-bottom: 8px; border-radius: 4px; font-size: 13px; }
 
-        .tree-dn {
-            font-size: 11px;
-            color: #64748b;
-            font-family: monospace;
-        }
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .tree-node.selected .tree-dn {
-            color: rgba(255, 255, 255, 0.8);
-        }
+        .toast { position: fixed; top: 20px; right: 20px; padding: 12px 24px; border-radius: 8px; background: #10b981; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1001; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        .card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: #f8fafc;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #475569;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        tr:hover {
-            background: #f8fafc;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .badge-success {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .badge-warning {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .badge-info {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-header h2 {
-            font-size: 22px;
-            color: #1e293b;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #64748b;
-        }
-
-        .attribute-list {
-            margin-top: 16px;
-        }
-
-        .attribute-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-
-        .attribute-key {
-            font-weight: 600;
-            color: #475569;
-        }
-
-        .attribute-value {
-            color: #64748b;
-            word-break: break-all;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        .log-entry {
-            padding: 12px;
-            background: #f8fafc;
-            border-left: 4px solid #667eea;
-            margin-bottom: 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 13px;
-        }
-
-        .log-time {
-            color: #64748b;
-            font-size: 12px;
-        }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 24px;
-            border-radius: 8px;
-            background: #10b981;
-            color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            z-index: 1001;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .loading-text {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #64748b;
-            font-size: 14px;
-        }
-        .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #94a3b8 !important;
-}
-
-.btn:disabled:hover {
-    transform: none;
-    box-shadow: none;
-}
-
-.pagination-info {
-    background: #e0e7ff;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.pagination-controls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
+        .loading-text { display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 14px; }
+        .no-data { color: #94a3b8; font-style: italic; padding: 20px 0; text-align: center; }
     </style>
 </head>
 <body>
@@ -559,52 +311,27 @@
         <div class="main-content">
             <div class="sidebar">
                 <div class="nav-item active" onclick="showSection('dashboard')">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7"/>
-                        <rect x="14" y="3" width="7" height="7"/>
-                        <rect x="14" y="14" width="7" height="7"/>
-                        <rect x="3" y="14" width="7" height="7"/>
-                    </svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     Tableau de bord
                 </div>
                 <div class="nav-item" onclick="showSection('browse')">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 3h7l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                    </svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>
                     Parcourir LDAP
                 </div>
                 <div class="nav-item" onclick="showSection('users')">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     Utilisateurs
                 </div>
                 <div class="nav-item" onclick="showSection('groups')">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="2" y1="12" x2="22" y2="12"/>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                    </svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                     Groupes
                 </div>
                 <div class="nav-item" onclick="showSection('search')">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                     Recherche
                 </div>
                 <div class="nav-item" onclick="showSection('logs')">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                        <polyline points="10 9 9 9 8 9"/>
-                    </svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                     Journaux
                 </div>
             </div>
@@ -612,95 +339,58 @@
             <div class="content-area">
                 <!-- Dashboard -->
                 <div id="dashboard" class="section active">
-                    <h2 style="margin-bottom: 24px; color: #1e293b;">Tableau de bord - dc=cnous,dc=fr</h2>
-                    
-                    <div class="stats-grid" id="statsGrid">
-                        <!-- Les stats seront chargées dynamiquement -->
-                    </div>
-
+                    <h2 style="margin-bottom: 24px; color: #1e293b;">Tableau de bord — dc=cnous,dc=fr</h2>
+                    <div class="stats-grid" id="statsGrid"></div>
                     <div class="card">
                         <div class="card-title">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                            </svg>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                             Activité récente
                         </div>
-                        <div id="recentActivity">
-                            <!-- Les logs seront chargés dynamiquement -->
-                        </div>
+                        <div id="recentActivity"></div>
                     </div>
                 </div>
 
                 <!-- Browse LDAP Tree -->
                 <div id="browse" class="section">
-                    <h2 style="margin-bottom: 24px; color: #1e293b;">Arborescence LDAP - dc=cnous,dc=fr</h2>
-                    
+                    <h2 style="margin-bottom: 24px; color: #1e293b;">Arborescence LDAP — dc=cnous,dc=fr</h2>
                     <div class="search-bar">
                         <input type="text" id="treeFilter" placeholder="Filtrer l'arborescence..." onkeyup="filterTree()">
-                        <button class="btn btn-primary" onclick="loadLDAPTree()" id="refreshTreeBtn">
-                            Rafraîchir
-                        </button>
+                        <button class="btn btn-primary" onclick="loadLDAPTree()" id="refreshTreeBtn">Rafraîchir</button>
                     </div>
-                    
                     <div class="tree-view" id="ldapTree">
-                        <div class="loading-text">
-                            <div class="spinner"></div>
-                            Connectez-vous pour parcourir l'arborescence
-                        </div>
+                        <div class="loading-text"><div class="spinner"></div>Connectez-vous pour parcourir l'arborescence</div>
                     </div>
                 </div>
 
-                <!-- Users Management -->
+                <!-- Users -->
                 <div id="users" class="section">
                     <h2 style="margin-bottom: 24px; color: #1e293b;">Gestion des utilisateurs</h2>
-                    
                     <div class="search-bar">
                         <input type="text" id="userSearch" placeholder="Rechercher un utilisateur...">
                         <button class="btn btn-primary" onclick="searchUsers()">Rechercher</button>
                         <button class="btn btn-success" onclick="showModal('addUserModal')">Nouvel utilisateur</button>
                     </div>
-                    
                     <div class="card">
+                        <!-- La table et la pagination sont injectées dynamiquement dans .table-wrapper -->
                         <table id="usersTable">
-                            <thead>
-                                <tr>
-                                    <th>Nom</th>
-                                    <th>Email</th>
-                                    <th>UID</th>
-                                    <th>Statut</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersTableBody">
-                                <!-- Les utilisateurs seront chargés dynamiquement -->
-                            </tbody>
+                            <thead><tr><th>Nom</th><th>Email</th><th>UID</th><th>Statut</th><th>Actions</th></tr></thead>
+                            <tbody id="usersTableBody"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Groups Management -->
+                <!-- Groups -->
                 <div id="groups" class="section">
                     <h2 style="margin-bottom: 24px; color: #1e293b;">Gestion des groupes</h2>
-                    
                     <div class="search-bar">
                         <input type="text" id="groupSearch" placeholder="Rechercher un groupe...">
                         <button class="btn btn-primary" onclick="searchGroups()">Rechercher</button>
                         <button class="btn btn-success" onclick="showModal('addGroupModal')">Nouveau groupe</button>
                     </div>
-                    
                     <div class="card">
                         <table id="groupsTable">
-                            <thead>
-                                <tr>
-                                    <th>Nom du groupe</th>
-                                    <th>Description</th>
-                                    <th>Membres</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="groupsTableBody">
-                                <!-- Les groupes seront chargés dynamiquement -->
-                            </tbody>
+                            <thead><tr><th>Nom du groupe</th><th>Description</th><th>Membres</th><th>Actions</th></tr></thead>
+                            <tbody id="groupsTableBody"></tbody>
                         </table>
                     </div>
                 </div>
@@ -708,106 +398,59 @@
                 <!-- Search -->
                 <div id="search" class="section">
                     <h2 style="margin-bottom: 24px; color: #1e293b;">Recherche avancée</h2>
-                    
                     <div class="connection-form">
                         <div class="form-row">
-                            <div class="form-group">
-                                <label>Base DN</label>
-                                <input type="text" id="searchBaseDN" value="dc=cnous,dc=fr" placeholder="dc=cnous,dc=fr">
-                            </div>
-                            <div class="form-group">
-                                <label>Filtre LDAP</label>
-                                <input type="text" id="searchFilter" value="(objectClass=*)" placeholder="(objectClass=*)">
-                            </div>
+                            <div class="form-group"><label>Base DN</label><input type="text" id="searchBaseDN" value="dc=cnous,dc=fr" placeholder="dc=cnous,dc=fr"></div>
+                            <div class="form-group"><label>Filtre LDAP</label><input type="text" id="searchFilter" value="(objectClass=*)" placeholder="(objectClass=*)"></div>
                         </div>
-                        
                         <div class="form-row">
-                            <div class="form-group">
-                                <label>Portée</label>
-                                <select id="searchScope">
-                                    <option value="base">Base</option>
-                                    <option value="one">Un niveau</option>
-                                    <option value="sub" selected>Sous-arbre</option>
-                                </select>
+                            <div class="form-group"><label>Portée</label>
+                                <select id="searchScope"><option value="base">Base</option><option value="one">Un niveau</option><option value="sub" selected>Sous-arbre</option></select>
                             </div>
-                            <div class="form-group">
-                                <label>Attributs (séparés par des virgules)</label>
-                                <input type="text" id="searchAttributes" placeholder="cn,mail,uid">
-                            </div>
+                            <div class="form-group"><label>Attributs (séparés par des virgules)</label><input type="text" id="searchAttributes" placeholder="cn,mail,uid"></div>
                         </div>
-                        
                         <div class="action-buttons">
-                            <button class="btn btn-primary" onclick="performSearch()">Rechercher</button>
+                            <button class="btn btn-primary" onclick="performSearch(1)">Rechercher</button>
                             <button class="btn btn-secondary" onclick="resetSearch()">Réinitialiser</button>
                         </div>
                     </div>
-                    
                     <div class="card">
-                        <div class="card-title">
-                            Résultats de la recherche
-                        </div>
-                        <div id="searchResults">
-                            <!-- Les résultats seront affichés ici -->
-                        </div>
+                        <div class="card-title">Résultats de la recherche</div>
+                        <div id="searchResults"></div>
                     </div>
                 </div>
 
                 <!-- Logs -->
                 <div id="logs" class="section">
                     <h2 style="margin-bottom: 24px; color: #1e293b;">Journaux d'activité</h2>
-                    
                     <div class="search-bar">
                         <input type="text" id="logSearch" placeholder="Filtrer les logs...">
                         <button class="btn btn-primary" onclick="loadLogs()">Rafraîchir</button>
                         <button class="btn btn-danger" onclick="clearLogs()">Effacer les logs</button>
                     </div>
-                    
                     <div class="card">
-                        <div id="logsContainer">
-                            <!-- Les logs seront chargés dynamiquement -->
-                        </div>
+                        <div id="logsContainer"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modals -->
+    <!-- Modal: Nouvel utilisateur -->
     <div id="addUserModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>Nouvel utilisateur</h2>
-                <button class="close-btn" onclick="closeModal('addUserModal')">&times;</button>
+            <div class="modal-header"><h2>Nouvel utilisateur</h2><button class="close-btn" onclick="closeModal('addUserModal')">&times;</button></div>
+            <div class="form-row">
+                <div class="form-group"><label>Nom complet (CN)*</label><input type="text" id="newUserCn" placeholder="Jean Dupont"></div>
+                <div class="form-group"><label>Nom de famille (SN)*</label><input type="text" id="newUserSn" placeholder="Dupont"></div>
             </div>
             <div class="form-row">
-                <div class="form-group">
-                    <label>Nom complet (CN)*</label>
-                    <input type="text" id="newUserCn" placeholder="Jean Dupont">
-                </div>
-                <div class="form-group">
-                    <label>Nom de famille (SN)*</label>
-                    <input type="text" id="newUserSn" placeholder="Dupont">
-                </div>
+                <div class="form-group"><label>UID*</label><input type="text" id="newUserUid" placeholder="jdupont"></div>
+                <div class="form-group"><label>Email*</label><input type="email" id="newUserMail" placeholder="jean.dupont@cnous.fr"></div>
             </div>
             <div class="form-row">
-                <div class="form-group">
-                    <label>UID*</label>
-                    <input type="text" id="newUserUid" placeholder="jdupont">
-                </div>
-                <div class="form-group">
-                    <label>Email*</label>
-                    <input type="email" id="newUserMail" placeholder="jean.dupont@cnous.fr">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Mot de passe*</label>
-                    <input type="password" id="newUserPassword" placeholder="Mot de passe">
-                </div>
-                <div class="form-group">
-                    <label>Unité organisationnelle</label>
-                    <input type="text" id="newUserOu" value="people" placeholder="people">
-                </div>
+                <div class="form-group"><label>Mot de passe*</label><input type="password" id="newUserPassword" placeholder="Mot de passe"></div>
+                <div class="form-group"><label>Unité organisationnelle</label><input type="text" id="newUserOu" value="people" placeholder="people"></div>
             </div>
             <div class="action-buttons">
                 <button class="btn btn-success" onclick="createUser()">Créer</button>
@@ -816,27 +459,16 @@
         </div>
     </div>
 
+    <!-- Modal: Nouveau groupe -->
     <div id="addGroupModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>Nouveau groupe</h2>
-                <button class="close-btn" onclick="closeModal('addGroupModal')">&times;</button>
+            <div class="modal-header"><h2>Nouveau groupe</h2><button class="close-btn" onclick="closeModal('addGroupModal')">&times;</button></div>
+            <div class="form-row">
+                <div class="form-group"><label>Nom du groupe (CN)*</label><input type="text" id="newGroupCn" placeholder="developers"></div>
+                <div class="form-group"><label>Description</label><input type="text" id="newGroupDescription" placeholder="Équipe de développement"></div>
             </div>
             <div class="form-row">
-                <div class="form-group">
-                    <label>Nom du groupe (CN)*</label>
-                    <input type="text" id="newGroupCn" placeholder="developers">
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <input type="text" id="newGroupDescription" placeholder="Équipe de développement">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Membres (DN séparés par des virgules)</label>
-                    <textarea id="newGroupMembers" rows="4" placeholder="uid=user1,ou=people,dc=cnous,dc=fr"></textarea>
-                </div>
+                <div class="form-group"><label>Membres (DN séparés par des virgules)</label><textarea id="newGroupMembers" rows="4" placeholder="uid=user1,ou=people,dc=cnous,dc=fr"></textarea></div>
             </div>
             <div class="action-buttons">
                 <button class="btn btn-success" onclick="createGroup()">Créer</button>
@@ -845,24 +477,15 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
+    <!-- Modal: Connexion -->
     <div id="loginModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>Connexion LDAP</h2>
-                <button class="close-btn" onclick="closeModal('loginModal')">&times;</button>
+            <div class="modal-header"><h2>Connexion LDAP</h2><button class="close-btn" onclick="closeModal('loginModal')">&times;</button></div>
+            <div class="form-row">
+                <div class="form-group"><label>Nom d'utilisateur (UID ou CN)</label><input type="text" id="loginUsername" placeholder="loginuser"></div>
             </div>
             <div class="form-row">
-                <div class="form-group">
-                    <label>Nom d'utilisateur (UID ou CN)</label>
-                    <input type="text" id="loginUsername" placeholder="loginuser">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Mot de passe</label>
-                    <input type="password" id="loginPassword" placeholder="Mot de passe">
-                </div>
+                <div class="form-group"><label>Mot de passe</label><input type="password" id="loginPassword" placeholder="Mot de passe"></div>
             </div>
             <div class="action-buttons">
                 <button class="btn btn-primary" onclick="performLogin()">Se connecter</button>
