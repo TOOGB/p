@@ -228,26 +228,275 @@
             overflow-y: auto;
         }
 
+        .tree-root-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .tree-node-wrapper {
+            display: flex;
+            flex-direction: column;
+        }
+
         .tree-node {
-            padding: 8px 12px;
-            margin: 2px 0;
             cursor: pointer;
             border-radius: 6px;
-            transition: all 0.2s;
+            transition: all 0.15s;
+            background: white;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 2px;
+        }
+
+        .tree-node:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .tree-node.selected {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+
+        .tree-node-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            gap: 8px;
+        }
+
+        .tree-node-left {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 14px;
+            flex: 1;
+            min-width: 0;
         }
-        .tree-node:hover { background: #e2e8f0; }
-        .tree-node.selected { background: #667eea; color: white; }
-        .tree-toggle { width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; user-select: none; }
-        .tree-children { margin-left: 24px; border-left: 2px solid #e2e8f0; padding-left: 12px; margin-top: 4px; margin-bottom: 4px; }
+
+        .tree-node-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .tree-toggle {
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 10px;
+            user-select: none;
+            color: #64748b;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .tree-toggle:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .tree-toggle.expanded { color: #3b82f6; }
+
+        .tree-toggle-spacer {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .tree-children {
+            margin-left: 20px;
+            padding-left: 0;
+            margin-top: 2px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
         .tree-children.collapsed { display: none; }
-        .tree-icon { font-size: 16px; }
-        .tree-label { flex: 1; }
-        .tree-dn { font-size: 11px; color: #64748b; font-family: monospace; }
-        .tree-node.selected .tree-dn { color: rgba(255,255,255,0.8); }
+
+        .tree-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .tree-label {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .tree-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tree-dn {
+            font-size: 10px;
+            color: #64748b;
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tree-node.selected .tree-dn { color: #3b82f6; }
+
+        .tree-action-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .tree-action-btn:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        .tree-btn-copy {
+            background: #fefce8;
+            border-color: #fde047;
+            color: #854d0e;
+        }
+
+        .tree-btn-copy:hover {
+            background: #fef08a;
+            border-color: #facc15;
+        }
+
+        .tree-btn-groups {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .tree-btn-groups:hover {
+            background: #dcfce7;
+            border-color: #86efac;
+        }
+
+        .tree-btn-info {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e40af;
+        }
+
+        .tree-btn-info:hover {
+            background: #dbeafe;
+            border-color: #93c5fd;
+        }
+
+        .tree-loading, .tree-no-children, .tree-error {
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+            margin: 4px 0;
+        }
+
+        .tree-error { color: #ef4444; }
+
+        .tree-load-more {
+            padding: 8px 0;
+            text-align: center;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* ====== TREE PAGINATION ====== */
+        .tree-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            margin: 6px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .tree-pagination-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tree-pagination-text {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .tree-pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .tree-page-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 500;
+            background: white;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .tree-page-btn:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .tree-page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #f8fafc;
+            color: #94a3b8;
+        }
+
+        .tree-page-active {
+            background: #667eea !important;
+            color: white !important;
+            border-color: #667eea !important;
+            font-weight: 700;
+        }
+
+        .tree-page-numbers {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+        }
+
+        .tree-page-ellipsis {
+            padding: 4px 3px;
+            color: #94a3b8;
+            font-size: 11px;
+        }
 
         .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
         .card-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
@@ -290,6 +539,194 @@
 
         .loading-text { display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 14px; }
         .no-data { color: #94a3b8; font-style: italic; padding: 20px 0; text-align: center; }
+
+        /* ====== SUPANN COPY BUTTON ====== */
+        .supann-login {
+            font-family: monospace;
+            font-size: 13px;
+            color: #334155;
+            background: #f1f5f9;
+            padding: 3px 7px;
+            border-radius: 4px;
+            margin-right: 4px;
+        }
+
+        .btn-icon {
+            background: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 3px 7px;
+            transition: all 0.15s;
+            vertical-align: middle;
+        }
+
+        .btn-icon:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+            transform: scale(1.1);
+        }
+
+        .text-muted { color: #94a3b8; font-size: 13px; }
+
+        /* ====== ACTIONS CELL ====== */
+        .actions-cell { white-space: nowrap; }
+        .actions-cell .btn { margin-right: 4px; }
+
+        /* ====== GROUP BUTTON IN TABLE ====== */
+        .btn-group-add {
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-group-add:hover {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+
+        /* ====== MANAGE GROUPS MODAL ====== */
+        .groups-manager { margin-top: 4px; }
+
+        .groups-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .groups-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .groups-col-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .groups-search-input {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            width: 100%;
+            transition: border 0.2s;
+        }
+
+        .groups-search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .groups-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 340px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.15s;
+            gap: 8px;
+        }
+
+        .group-item-current {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .group-item-available {
+            background: #f8fafc;
+        }
+
+        .group-item-available:hover {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .group-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .group-item-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .group-item-desc {
+            font-size: 11px;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-add-group {
+            flex-shrink: 0;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-add-group:hover { background: #5568d3; }
+
+        .btn-remove-group {
+            flex-shrink: 0;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-remove-group:hover {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+        }
+
+        .groups-empty {
+            text-align: center;
+            padding: 20px 0;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -373,7 +810,7 @@
                     <div class="card">
                         <!-- La table et la pagination sont injectées dynamiquement dans .table-wrapper -->
                         <table id="usersTable">
-                            <thead><tr><th>Nom</th><th>Email</th><th>UID</th><th>Statut</th><th>Actions</th></tr></thead>
+                            <thead><tr><th>Nom</th><th>Email</th><th>UID</th><th>Login (supann)</th><th>Actions</th></tr></thead>
                             <tbody id="usersTableBody"></tbody>
                         </table>
                     </div>

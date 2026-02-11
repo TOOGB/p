@@ -274,13 +274,21 @@ function renderRecentActivity(logs) {
     container.appendChild(table);
 }
 
-// ============ ARBORESCENCE LDAP ============
+// ============ ARBORESCENCE LDAP (Navigation style explorateur) ============
+let expandedNodes = new Set(); // Track expanded nodes
+
 async function loadLDAPTree(parentDN = null, page = 1) {
     if (!currentToken) { showToast('Veuillez vous connecter d\'abord', 'error'); return; }
     const treeContainer = document.getElementById('ldapTree');
     const refreshBtn = document.getElementById('refreshTreeBtn');
     if (refreshBtn) refreshBtn.disabled = true;
-    treeContainer.innerHTML = '<div class="loading-text"><div class="spinner"></div>Chargement...</div>';
+    
+    if (!parentDN) {
+        // Initial load - show root
+        treeContainer.innerHTML = '<div class="loading-text"><div class="spinner"></div>Chargement de la racine...</div>';
+        expandedNodes.clear();
+    }
+    
     try {
         currentParentDN = parentDN;
         currentTreePage = page;
@@ -288,7 +296,13 @@ async function loadLDAPTree(parentDN = null, page = 1) {
         if (parentDN) params.append('parentDN', parentDN);
         const data = await apiRequest(`/ldap/children?${params.toString()}`);
         treeData.root = data;
-        renderTreeWithPagination(data);
+        
+        if (!parentDN) {
+            renderTreeRoot(data);
+        } else {
+            // This is for pagination of expanded node
+            renderTreeWithPagination(data);
+        }
     } catch (error) {
         treeContainer.innerHTML = '<p style="color: #ef4444;">Erreur lors du chargement</p>';
     } finally {
@@ -296,10 +310,33 @@ async function loadLDAPTree(parentDN = null, page = 1) {
     }
 }
 
-function renderTreeWithPagination(data) {
+function renderTreeRoot(data) {
     const treeContainer = document.getElementById('ldapTree');
     treeContainer.innerHTML = '';
+    
+    if (!data.entries || data.entries.length === 0) {
+        treeContainer.innerHTML = '<p class="no-data">Aucune entrée trouvée</p>';
+        return;
+    }
+    
+    const rootList = document.createElement('div');
+    rootList.className = 'tree-root-list';
+    rootList.id = 'treeRootList';
+    
+    data.entries.forEach((entry, index) => {
+        const nodeElement = createTreeNodeExpandable(entry, 0, `root_${index}`);
+        rootList.appendChild(nodeElement);
+    });
+    
+    treeContainer.appendChild(rootList);
+}
 
+function renderTreeWithPagination(data) {
+    // This function is called when viewing a specific parent DN with pagination
+    // For now, we'll just render it as a simple list
+    const treeContainer = document.getElementById('ldapTree');
+    treeContainer.innerHTML = '';
+    
     const topBar = createPaginationBar(
         data.pagination,
         (p) => loadLDAPTree(currentParentDN, p),
@@ -314,9 +351,11 @@ function renderTreeWithPagination(data) {
         treeContainer.appendChild(noData);
         return;
     }
+    
     const entriesContainer = document.createElement('div');
+    entriesContainer.className = 'tree-root-list';
     data.entries.forEach((entry, index) => {
-        entriesContainer.appendChild(createTreeNode(entry, index, 0));
+        entriesContainer.appendChild(createTreeNodeExpandable(entry, 0, `paged_${index}`));
     });
     treeContainer.appendChild(entriesContainer);
 
@@ -328,46 +367,321 @@ function renderTreeWithPagination(data) {
     treeContainer.appendChild(bottomBar);
 }
 
-function createTreeNode(entry, index, level, parentId = 'root') {
-    const nodeId = `${parentId}_${index}`;
+function createTreeNodeExpandable(entry, level, nodeId) {
     const nodeWrapper = document.createElement('div');
     nodeWrapper.className = 'tree-node-wrapper';
     nodeWrapper.dataset.nodeId = nodeId;
     nodeWrapper.dataset.dn = entry.dn;
+    nodeWrapper.dataset.level = level;
+    
     const node = document.createElement('div');
     node.className = 'tree-node';
-    node.style.marginLeft = `${level * 20}px`;
+    node.style.paddingLeft = `${level * 20 + 8}px`;
+    
     const icon = getIcon(entry);
     const label = getLabel(entry);
     const hasChildren = entry.hasChildren || false;
-    const childCount = entry.childCount || 0;
-    const childCountBadge = hasChildren && childCount > 0
-        ? `<span style="background: #3b82f6; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px;">${childCount}</span>` : '';
-    node.innerHTML = `
-        ${hasChildren ? `<span class="tree-toggle collapsed">▶</span>` : '<span class="tree-toggle"></span>'}
-        <span class="tree-icon">${icon}</span>
-        <div class="tree-label">
-            <div><strong>${label}</strong>${childCountBadge}</div>
-            <div class="tree-dn">${entry.dn}</div>
-        </div>
-        ${hasChildren ? '<span class="tree-loading" style="display:none;">⌛</span>' : ''}
+    const isExpanded = expandedNodes.has(entry.dn);
+    
+    // Déterminer le type d'entrée
+    const objectClasses = entry.attributes?.objectClass;
+    const classes = Array.isArray(objectClasses) ? objectClasses : [objectClasses];
+    const isUser = classes.includes('inetOrgPerson') || classes.includes('person');
+    const isGroup = classes.includes('groupOfNames') || classes.includes('groupOfUniqueNames');
+    const supannAliasLogin = entry.attributes?.supannAliasLogin || '';
+    
+    // Construire le contenu du nœud
+    let nodeContent = `
+        <div class="tree-node-main">
+            <div class="tree-node-left">
+                ${hasChildren 
+                    ? `<span class="tree-toggle ${isExpanded ? 'expanded' : 'collapsed'}" data-dn="${entry.dn.replace(/"/g, '&quot;')}">
+                        ${isExpanded ? '▼' : '▶'}
+                       </span>` 
+                    : '<span class="tree-toggle-spacer"></span>'}
+                <span class="tree-icon">${icon}</span>
+                <div class="tree-label">
+                    <div class="tree-name">${label}</div>
+                    <div class="tree-dn">${entry.dn}</div>
+                </div>
+            </div>
+            <div class="tree-node-actions">
     `;
-    if (hasChildren) {
-        const toggle = node.querySelector('.tree-toggle');
-        toggle.addEventListener('click', (e) => { e.stopPropagation(); loadLDAPTree(entry.dn, 1); });
+    
+    // Actions spécifiques selon le type
+    if (isUser && supannAliasLogin) {
+        nodeContent += `
+            <button class="tree-action-btn tree-btn-copy" title="Copier le login" 
+                onclick='event.stopPropagation(); copySupann("${supannAliasLogin.replace(/"/g, '&quot;')}")'>
+                📋 ${supannAliasLogin}
+            </button>
+        `;
     }
-    node.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('tree-toggle') && !e.target.classList.contains('tree-loading')) selectNode(node, entry);
+    
+    if (isUser) {
+        const dnEscaped = entry.dn.replace(/"/g, '&quot;').replace(/`/g, '\\`');
+        const nameEscaped = label.replace(/"/g, '&quot;');
+        nodeContent += `
+            <button class="tree-action-btn tree-btn-groups" title="Gérer les groupes" 
+                onclick='event.stopPropagation(); manageUserGroups(\`${dnEscaped}\`, "${nameEscaped}")'>
+                👥 Groupes
+            </button>
+        `;
+    }
+    
+    nodeContent += `
+                <button class="tree-action-btn tree-btn-info" title="Voir les détails" 
+                    onclick='event.stopPropagation(); showEntryDetailsInline(${JSON.stringify(entry).replace(/'/g, "&#39;")})'>
+                    ℹ️
+                </button>
+            </div>
+        </div>
+    `;
+    
+    node.innerHTML = nodeContent;
+    
+    // Event listeners
+    const toggleBtn = node.querySelector('.tree-toggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await toggleNode(entry.dn, nodeWrapper, toggleBtn);
+        });
+    }
+    
+    // Click sur le nœud principal pour le sélectionner
+    const mainDiv = node.querySelector('.tree-node-main');
+    mainDiv.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('tree-action-btn') && 
+            !e.target.closest('.tree-action-btn')) {
+            selectTreeNode(node, entry);
+        }
     });
+    
     nodeWrapper.appendChild(node);
+    
+    // Conteneur pour les enfants
     if (hasChildren) {
         const childrenContainer = document.createElement('div');
-        childrenContainer.className = 'tree-children collapsed';
+        childrenContainer.className = `tree-children ${isExpanded ? '' : 'collapsed'}`;
         childrenContainer.id = `children_${nodeId}`;
         nodeWrapper.appendChild(childrenContainer);
+        
+        // Si déjà expandé, charger les enfants
+        if (isExpanded) {
+            loadNodeChildren(entry.dn, childrenContainer, level + 1, nodeId);
+        }
     }
+    
     treeData[nodeId] = entry;
     return nodeWrapper;
+}
+
+async function toggleNode(dn, nodeWrapper, toggleBtn) {
+    const childrenContainer = nodeWrapper.querySelector('.tree-children');
+    if (!childrenContainer) return;
+    
+    const isCurrentlyExpanded = expandedNodes.has(dn);
+    
+    if (isCurrentlyExpanded) {
+        // Collapse
+        expandedNodes.delete(dn);
+        childrenContainer.classList.add('collapsed');
+        toggleBtn.textContent = '▶';
+        toggleBtn.classList.remove('expanded');
+        toggleBtn.classList.add('collapsed');
+    } else {
+        // Expand
+        expandedNodes.add(dn);
+        childrenContainer.classList.remove('collapsed');
+        toggleBtn.textContent = '▼';
+        toggleBtn.classList.remove('collapsed');
+        toggleBtn.classList.add('expanded');
+        
+        // Charger les enfants si pas déjà chargé
+        if (!childrenContainer.hasChildNodes() || childrenContainer.innerHTML.trim() === '') {
+            const level = parseInt(nodeWrapper.dataset.level);
+            const nodeId = nodeWrapper.dataset.nodeId;
+            await loadNodeChildren(dn, childrenContainer, level + 1, nodeId);
+        }
+    }
+}
+
+async function loadNodeChildren(parentDN, container, level, parentNodeId, page = 1) {
+    container.innerHTML = '<div class="tree-loading"><div class="spinner"></div>Chargement...</div>';
+    
+    try {
+        const pageSize = 50; // Children per page
+        const params = new URLSearchParams({ 
+            parentDN, 
+            page, 
+            pageSize
+        });
+        const data = await apiRequest(`/ldap/children?${params.toString()}`);
+        
+        container.innerHTML = '';
+        
+        if (!data.entries || data.entries.length === 0) {
+            container.innerHTML = '<div class="tree-no-children">Aucun enfant</div>';
+            return;
+        }
+        
+        // Add pagination info at top if multiple pages
+        if (data.pagination && data.pagination.totalPages > 1) {
+            const topPagination = createTreePaginationBar(
+                data.pagination, 
+                parentDN, 
+                container, 
+                level, 
+                parentNodeId
+            );
+            container.appendChild(topPagination);
+        }
+        
+        // Add all child nodes
+        data.entries.forEach((child, idx) => {
+            const childNode = createTreeNodeExpandable(child, level, `${parentNodeId}_${idx}`);
+            container.appendChild(childNode);
+        });
+        
+        // Add pagination at bottom if multiple pages
+        if (data.pagination && data.pagination.totalPages > 1) {
+            const bottomPagination = createTreePaginationBar(
+                data.pagination, 
+                parentDN, 
+                container, 
+                level, 
+                parentNodeId
+            );
+            container.appendChild(bottomPagination);
+        }
+        
+    } catch (error) {
+        console.error('Error loading children:', error);
+        container.innerHTML = '<div class="tree-error">Erreur de chargement</div>';
+    }
+}
+
+function createTreePaginationBar(pagination, parentDN, container, level, parentNodeId) {
+    const bar = document.createElement('div');
+    bar.className = 'tree-pagination';
+    
+    const info = document.createElement('div');
+    info.className = 'tree-pagination-info';
+    info.innerHTML = `
+        <span class="tree-pagination-text">
+            ${pagination.startIndex + 1}–${pagination.endIndex} sur ${pagination.totalCount}
+            &nbsp;·&nbsp; Page ${pagination.currentPage}/${pagination.totalPages}
+        </span>
+    `;
+    
+    const controls = document.createElement('div');
+    controls.className = 'tree-pagination-controls';
+    
+    // First page button
+    const firstBtn = document.createElement('button');
+    firstBtn.className = 'tree-page-btn';
+    firstBtn.innerHTML = '«';
+    firstBtn.title = 'Première page';
+    firstBtn.disabled = !pagination.hasPreviousPage;
+    firstBtn.onclick = (e) => {
+        e.stopPropagation();
+        loadNodeChildren(parentDN, container, level, parentNodeId, 1);
+    };
+    controls.appendChild(firstBtn);
+    
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'tree-page-btn';
+    prevBtn.innerHTML = '‹';
+    prevBtn.title = 'Page précédente';
+    prevBtn.disabled = !pagination.hasPreviousPage;
+    prevBtn.onclick = (e) => {
+        e.stopPropagation();
+        loadNodeChildren(parentDN, container, level, parentNodeId, pagination.currentPage - 1);
+    };
+    controls.appendChild(prevBtn);
+    
+    // Page numbers (simplified for tree view)
+    const pagesDiv = document.createElement('div');
+    pagesDiv.className = 'tree-page-numbers';
+    
+    const totalPages = pagination.totalPages;
+    const currentPage = pagination.currentPage;
+    let pages = [];
+    
+    if (totalPages <= 5) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        pages = [1];
+        if (currentPage > 3) pages.push('...');
+        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+            pages.push(i);
+        }
+        if (currentPage < totalPages - 2) pages.push('...');
+        pages.push(totalPages);
+    }
+    
+    pages.forEach(p => {
+        if (p === '...') {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'tree-page-ellipsis';
+            ellipsis.textContent = '…';
+            pagesDiv.appendChild(ellipsis);
+        } else {
+            const btn = document.createElement('button');
+            btn.className = 'tree-page-btn' + (p === currentPage ? ' tree-page-active' : '');
+            btn.textContent = p;
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                loadNodeChildren(parentDN, container, level, parentNodeId, p);
+            };
+            pagesDiv.appendChild(btn);
+        }
+    });
+    controls.appendChild(pagesDiv);
+    
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'tree-page-btn';
+    nextBtn.innerHTML = '›';
+    nextBtn.title = 'Page suivante';
+    nextBtn.disabled = !pagination.hasNextPage;
+    nextBtn.onclick = (e) => {
+        e.stopPropagation();
+        loadNodeChildren(parentDN, container, level, parentNodeId, pagination.currentPage + 1);
+    };
+    controls.appendChild(nextBtn);
+    
+    // Last page button
+    const lastBtn = document.createElement('button');
+    lastBtn.className = 'tree-page-btn';
+    lastBtn.innerHTML = '»';
+    lastBtn.title = 'Dernière page';
+    lastBtn.disabled = !pagination.hasNextPage;
+    lastBtn.onclick = (e) => {
+        e.stopPropagation();
+        loadNodeChildren(parentDN, container, level, parentNodeId, pagination.totalPages);
+    };
+    controls.appendChild(lastBtn);
+    
+    bar.appendChild(info);
+    bar.appendChild(controls);
+    
+    return bar;
+}
+
+function selectTreeNode(nodeElement, entry) {
+    // Désélectionner tous les nœuds
+    document.querySelectorAll('.tree-node').forEach(n => n.classList.remove('selected'));
+    nodeElement.classList.add('selected');
+    
+    // Optionnel: afficher les détails dans un panneau latéral
+    // showEntryDetails(entry);
+}
+
+function showEntryDetailsInline(entry) {
+    showEntryDetails(entry);
 }
 
 function getIcon(entry) {
@@ -386,17 +700,11 @@ function getLabel(entry) {
     return entry.attributes?.cn || entry.attributes?.ou || entry.attributes?.dc || entry.attributes?.uid || entry.dn.split(',')[0].split('=')[1];
 }
 
-function selectNode(node, entry) {
-    document.querySelectorAll('.tree-node').forEach(n => n.classList.remove('selected'));
-    node.classList.add('selected');
-    showEntryDetails(entry);
-}
-
 function filterTree() {
     const filter = document.getElementById('treeFilter').value.toLowerCase();
-    document.querySelectorAll('.tree-node').forEach(node => {
-        const text = node.textContent.toLowerCase();
-        node.parentElement.style.display = text.includes(filter) ? 'block' : 'none';
+    document.querySelectorAll('.tree-node-wrapper').forEach(wrapper => {
+        const text = wrapper.textContent.toLowerCase();
+        wrapper.style.display = text.includes(filter) ? 'block' : 'none';
     });
 }
 
@@ -421,25 +729,33 @@ function renderUsers(users, pagination) {
     const section = document.getElementById('users');
     let tableWrapper = section.querySelector('.table-wrapper');
     if (!tableWrapper) { tableWrapper = document.createElement('div'); tableWrapper.className = 'table-wrapper'; section.querySelector('.card').appendChild(tableWrapper); }
-
-    // Vider et reconstruire la zone table + pagination
     tableWrapper.innerHTML = '';
 
     if (!users || users.length === 0) {
         tableWrapper.innerHTML = '<p class="no-data">Aucun utilisateur trouvé</p>';
     } else {
         const table = document.createElement('table');
-        table.innerHTML = `<thead><tr><th>Nom</th><th>Email</th><th>UID</th><th>Statut</th><th>Actions</th></tr></thead>
+        table.innerHTML = `<thead><tr><th>Nom</th><th>Email</th><th>UID</th><th>Login (supann)</th><th>Actions</th></tr></thead>
             <tbody>${users.map(user => {
                 const uid = user.attributes?.uid || user.dn.match(/uid=([^,]+)/)?.[1] || 'N/A';
                 const cn = user.attributes?.cn || 'N/A';
                 const mail = user.attributes?.mail || 'N/A';
+                const supann = user.attributes?.supannAliasLogin || '';
                 const dn = user.dn;
                 const dnEscaped = dn.replace(/`/g, '\\`').replace(/'/g, "\\'");
+                const supannEscaped = supann.replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 return `<tr>
-                    <td>${cn}</td><td>${mail}</td><td>${uid}</td>
-                    <td><span class="badge badge-success">Actif</span></td>
+                    <td>${cn}</td>
+                    <td>${mail}</td>
+                    <td>${uid}</td>
                     <td>
+                        ${supann
+                            ? `<span class="supann-login">${supann}</span>
+                               <button class="btn-icon" title="Copier le login" onclick='copySupann(\`${supannEscaped}\`)'>📋</button>`
+                            : '<span class="text-muted">—</span>'}
+                    </td>
+                    <td class="actions-cell">
+                        <button class="btn btn-group-add" title="Gérer les groupes" onclick='manageUserGroups(\`${dnEscaped}\`, "${cn.replace(/"/g, '&quot;')}")'>👥 Groupes</button>
                         <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick='editUser(\`${dnEscaped}\`)'>Éditer</button>
                         <button class="btn btn-danger" style="padding:6px 12px;font-size:12px" onclick='deleteUser(\`${dnEscaped}\`)'>Supprimer</button>
                     </td>
@@ -457,7 +773,6 @@ function renderUsers(users, pagination) {
         tableWrapper.appendChild(bar);
     }
 
-    // Mettre à jour le tbody dans la table HTML statique aussi
     const staticTbody = document.getElementById('usersTableBody');
     if (staticTbody) staticTbody.innerHTML = '';
 }
@@ -852,6 +1167,204 @@ function showEntryDetails(entry) {
     </div>`;
     document.body.appendChild(modal);
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+// ============ COPIE SUPANN ALIAS LOGIN ============
+function copySupann(value) {
+    if (!value) { showToast('Aucun supannAliasLogin disponible', 'error'); return; }
+    navigator.clipboard.writeText(value).then(() => {
+        showToast(`Login copié : ${value}`, 'success');
+    }).catch(() => {
+        // Fallback pour les navigateurs sans clipboard API
+        const ta = document.createElement('textarea');
+        ta.value = value;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        showToast(`Login copié : ${value}`, 'success');
+    });
+}
+
+// ============ GESTION DES GROUPES D'UN UTILISATEUR ============
+async function manageUserGroups(userDN, userName) {
+    if (!currentToken) { showToast('Veuillez vous connecter d\'abord', 'error'); return; }
+
+    // Supprimer toute modale existante
+    const existing = document.getElementById('manageGroupsModal');
+    if (existing) existing.remove();
+
+    // Créer la modale avec un état de chargement
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'manageGroupsModal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width:700px">
+            <div class="modal-header">
+                <h2>👥 Groupes — ${userName}</h2>
+                <button class="close-btn" onclick="document.getElementById('manageGroupsModal').remove()">&times;</button>
+            </div>
+            <div class="groups-manager">
+                <div class="groups-columns">
+                    <div class="groups-col">
+                        <h3 class="groups-col-title">✅ Groupes actuels</h3>
+                        <div id="currentGroupsList" class="groups-list"><div class="loading-text"><div class="spinner"></div>Chargement...</div></div>
+                    </div>
+                    <div class="groups-col">
+                        <h3 class="groups-col-title">➕ Ajouter à un groupe</h3>
+                        <input type="text" id="groupSearchInput" placeholder="Rechercher un groupe…" oninput="filterAvailableGroups()" class="groups-search-input">
+                        <div id="availableGroupsList" class="groups-list"><div class="loading-text"><div class="spinner"></div>Chargement...</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+    // Charger en parallèle : groupes actuels de l'utilisateur + tous les groupes
+    try {
+        const [userGroupsData, allGroupsData] = await Promise.all([
+            apiRequest(`/ldap/users/${encodeURIComponent(userDN)}/groups`),
+            apiRequest('/ldap/groups/search?pageSize=200')
+        ]);
+
+        const userGroups = userGroupsData.groups || [];
+        const allGroups = allGroupsData.groups || [];
+        const userGroupDNs = new Set(userGroups.map(g => g.dn));
+
+        // Stocker pour le filtre
+        modal._userDN = userDN;
+        modal._userGroups = userGroups;
+        modal._allGroups = allGroups;
+        modal._userGroupDNs = userGroupDNs;
+
+        renderCurrentGroups(userGroups, userDN, userGroupDNs, allGroups);
+        renderAvailableGroups(allGroups, userGroupDNs, userDN, userGroups);
+
+    } catch (error) {
+        console.error('Error loading groups:', error);
+        document.getElementById('currentGroupsList').innerHTML = '<p class="text-muted">Erreur de chargement</p>';
+        document.getElementById('availableGroupsList').innerHTML = '<p class="text-muted">Erreur de chargement</p>';
+    }
+}
+
+function renderCurrentGroups(userGroups, userDN, userGroupDNs, allGroups) {
+    const container = document.getElementById('currentGroupsList');
+    if (!container) return;
+
+    if (userGroups.length === 0) {
+        container.innerHTML = '<p class="text-muted groups-empty">Aucun groupe</p>';
+        return;
+    }
+
+    container.innerHTML = '';
+    userGroups.forEach(group => {
+        const item = document.createElement('div');
+        item.className = 'group-item group-item-current';
+        item.dataset.dn = group.dn;
+        const cn = group.attributes?.cn || group.dn.match(/cn=([^,]+)/)?.[1] || group.dn;
+        const desc = group.attributes?.description || '';
+        item.innerHTML = `
+            <div class="group-item-info">
+                <span class="group-item-name">👥 ${cn}</span>
+                ${desc ? `<span class="group-item-desc">${desc}</span>` : ''}
+            </div>
+            <button class="btn btn-remove-group" title="Retirer du groupe"
+                onclick='removeFromGroup(\`${group.dn.replace(/`/g, '\\`')}\`, \`${userDN.replace(/`/g, '\\`')}\`, \`${cn.replace(/`/g, '\\`')}\`)'>
+                ✕ Retirer
+            </button>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function renderAvailableGroups(allGroups, userGroupDNs, userDN, userGroups) {
+    const container = document.getElementById('availableGroupsList');
+    if (!container) return;
+    const filter = document.getElementById('groupSearchInput')?.value?.toLowerCase() || '';
+
+    const available = allGroups.filter(g => {
+        if (userGroupDNs.has(g.dn)) return false;
+        if (filter) {
+            const cn = (g.attributes?.cn || '').toLowerCase();
+            const desc = (g.attributes?.description || '').toLowerCase();
+            return cn.includes(filter) || desc.includes(filter);
+        }
+        return true;
+    });
+
+    if (available.length === 0) {
+        container.innerHTML = '<p class="text-muted groups-empty">Aucun groupe disponible</p>';
+        return;
+    }
+
+    container.innerHTML = '';
+    available.forEach(group => {
+        const item = document.createElement('div');
+        item.className = 'group-item group-item-available';
+        const cn = group.attributes?.cn || group.dn.match(/cn=([^,]+)/)?.[1] || group.dn;
+        const desc = group.attributes?.description || '';
+        item.innerHTML = `
+            <div class="group-item-info">
+                <span class="group-item-name">👥 ${cn}</span>
+                ${desc ? `<span class="group-item-desc">${desc}</span>` : ''}
+            </div>
+            <button class="btn btn-add-group" title="Ajouter au groupe"
+                onclick='addToGroup(\`${group.dn.replace(/`/g, '\\`')}\`, \`${userDN.replace(/`/g, '\\`')}\`, \`${cn.replace(/`/g, '\\`')}\`)'>
+                + Ajouter
+            </button>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function filterAvailableGroups() {
+    const modal = document.getElementById('manageGroupsModal');
+    if (!modal || !modal._allGroups) return;
+    renderAvailableGroups(modal._allGroups, modal._userGroupDNs, modal._userDN, modal._userGroups);
+}
+
+async function addToGroup(groupDN, userDN, groupName) {
+    try {
+        await apiRequest(`/ldap/groups/${encodeURIComponent(groupDN)}/members`, {
+            method: 'POST',
+            body: JSON.stringify({ memberDN: userDN })
+        });
+        showToast(`Ajouté au groupe « ${groupName} »`, 'success');
+        // Rafraîchir la modale
+        const modal = document.getElementById('manageGroupsModal');
+        if (modal) {
+            modal._userGroupDNs.add(groupDN);
+            modal._userGroups.push({ dn: groupDN, attributes: { cn: groupName } });
+            renderCurrentGroups(modal._userGroups, modal._userDN, modal._userGroupDNs, modal._allGroups);
+            renderAvailableGroups(modal._allGroups, modal._userGroupDNs, modal._userDN, modal._userGroups);
+        }
+    } catch (error) {
+        showToast(error.message || 'Erreur lors de l\'ajout au groupe', 'error');
+    }
+}
+
+async function removeFromGroup(groupDN, userDN, groupName) {
+    try {
+        await apiRequest(`/ldap/groups/${encodeURIComponent(groupDN)}/members`, {
+            method: 'DELETE',
+            body: JSON.stringify({ memberDN: userDN })
+        });
+        showToast(`Retiré du groupe « ${groupName} »`, 'success');
+        // Rafraîchir la modale
+        const modal = document.getElementById('manageGroupsModal');
+        if (modal) {
+            modal._userGroupDNs.delete(groupDN);
+            modal._userGroups = modal._userGroups.filter(g => g.dn !== groupDN);
+            renderCurrentGroups(modal._userGroups, modal._userDN, modal._userGroupDNs, modal._allGroups);
+            renderAvailableGroups(modal._allGroups, modal._userGroupDNs, modal._userDN, modal._userGroups);
+        }
+    } catch (error) {
+        showToast(error.message || 'Erreur lors du retrait du groupe', 'error');
+    }
 }
 
 // ============ INITIALISATION ============

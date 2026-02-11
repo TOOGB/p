@@ -256,7 +256,7 @@ app.get('/api/ldap/children', authenticateJWT, async (req, res) => {
         const searchScope = scope || 'one';
         const result = await ldapSearchPaginated(client, searchBase, {
             filter: '(objectClass=*)', scope: searchScope,
-            attributes: ['dn', 'cn', 'ou', 'objectClass', 'description', 'member', 'uid']
+            attributes: ['dn', 'cn', 'ou', 'objectClass', 'description', 'member', 'uid', 'supannAliasLogin']
         }, actualPageSize);
         client.unbind();
         const entries = result.entries;
@@ -345,7 +345,7 @@ app.get('/api/ldap/users/search', authenticateJWT, async (req, res) => {
         const result = await ldapSearchPaginated(client, LDAP_CONFIG.BASE_DN, {
             filter,
             scope: 'sub',
-            attributes: ['dn', 'cn', 'sn', 'uid', 'mail', 'givenName', 'telephoneNumber', 'title', 'description']
+            attributes: ['dn', 'cn', 'sn', 'uid', 'mail', 'givenName', 'telephoneNumber', 'title', 'description', 'supannAliasLogin']
         }, 500);
 
         client.unbind();
@@ -534,6 +534,79 @@ app.get('/api/ldap/groups/:dn', authenticateJWT, async (req, res) => {
     } catch (error) {
         if (client && typeof client.unbind === 'function') client.unbind();
         res.status(500).json({ success: false, error: 'Erreur lors de la récupération du groupe' });
+    }
+});
+
+// Ajouter un membre dans un groupe
+app.post('/api/ldap/groups/:dn/members', authenticateJWT, async (req, res) => {
+    const groupDN = decodeURIComponent(req.params.dn);
+    const { memberDN } = req.body;
+    if (!memberDN) return res.status(400).json({ success: false, error: 'memberDN requis' });
+    const client = createLdapClient();
+    try {
+        await ldapBind(client, LDAP_CONFIG.ADMIN_DN, LDAP_CONFIG.ADMIN_PASSWORD);
+        const change = new ldap.Change({
+            operation: 'add',
+            modification: new ldap.Attribute({ type: 'member', values: [memberDN] })
+        });
+        await new Promise((resolve, reject) => { client.modify(groupDN, change, (err) => err ? reject(err) : resolve()); });
+        client.unbind();
+        await logActivity(req.user.username, 'group_member_added', { groupDN, memberDN });
+        res.json({ success: true, message: `Membre ajouté au groupe avec succès` });
+    } catch (error) {
+        if (client && typeof client.unbind === 'function') client.unbind();
+        console.error('Add member error:', error);
+        if (error.message && error.message.includes('Type or value exists')) {
+            return res.status(409).json({ success: false, error: 'Ce membre est déjà dans le groupe' });
+        }
+        await logActivity(req.user.username, 'group_member_add_failed', { groupDN, memberDN, error: error.message }, 'failure');
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Retirer un membre d'un groupe
+app.delete('/api/ldap/groups/:dn/members', authenticateJWT, async (req, res) => {
+    const groupDN = decodeURIComponent(req.params.dn);
+    const { memberDN } = req.body;
+    if (!memberDN) return res.status(400).json({ success: false, error: 'memberDN requis' });
+    const client = createLdapClient();
+    try {
+        await ldapBind(client, LDAP_CONFIG.ADMIN_DN, LDAP_CONFIG.ADMIN_PASSWORD);
+        const change = new ldap.Change({
+            operation: 'delete',
+            modification: new ldap.Attribute({ type: 'member', values: [memberDN] })
+        });
+        await new Promise((resolve, reject) => { client.modify(groupDN, change, (err) => err ? reject(err) : resolve()); });
+        client.unbind();
+        await logActivity(req.user.username, 'group_member_removed', { groupDN, memberDN });
+        res.json({ success: true, message: `Membre retiré du groupe avec succès` });
+    } catch (error) {
+        if (client && typeof client.unbind === 'function') client.unbind();
+        console.error('Remove member error:', error);
+        if (error.message && error.message.includes('No Such Attribute')) {
+            return res.status(404).json({ success: false, error: 'Ce membre n\'est pas dans le groupe' });
+        }
+        await logActivity(req.user.username, 'group_member_remove_failed', { groupDN, memberDN, error: error.message }, 'failure');
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Lister les groupes d'un utilisateur (DN)
+app.get('/api/ldap/users/:dn/groups', authenticateJWT, async (req, res) => {
+    const userDN = decodeURIComponent(req.params.dn);
+    const client = createLdapClient();
+    try {
+        await ldapBind(client, LDAP_CONFIG.ADMIN_DN, LDAP_CONFIG.ADMIN_PASSWORD);
+        const groups = await ldapSearch(client, LDAP_CONFIG.BASE_DN, {
+            filter: `(&(objectClass=groupOfNames)(member=${userDN}))`,
+            scope: 'sub',
+            attributes: ['dn', 'cn', 'description']
+        });
+        client.unbind();
+        res.json({ success: true, groups, count: groups.length });
+    } catch (error) {
+        if (client && typeof client.unbind === 'function') client.unbind();
+        res.status(500).json({ success: false, error: 'Erreur lors de la récupération des groupes' });
     }
 });
 
