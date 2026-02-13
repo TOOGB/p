@@ -498,6 +498,145 @@
             font-size: 11px;
         }
 
+        /* ====== USER SECTIONS (ACTIVE/INACTIVE) ====== */
+        .users-section {
+            margin-bottom: 24px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .users-active-section {
+            border-color: #86efac;
+            background: #f0fdf4;
+        }
+
+        .users-inactive-section {
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+
+        .users-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .users-active-section .users-section-header {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-bottom-color: #86efac;
+        }
+
+        .users-inactive-section .users-section-header {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-bottom-color: #fca5a5;
+        }
+
+        .users-section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .users-count {
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .users-section-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
+
+        .users-section table {
+            background: white;
+            margin: 0;
+        }
+
+        .user-row-inactive {
+            background: #fef2f2 !important;
+        }
+
+        .user-row-inactive:hover {
+            background: #fee2e2 !important;
+        }
+
+        /* ====== ACTION BUTTONS ====== */
+        .btn-action {
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+            margin-right: 4px;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-details {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e40af;
+        }
+
+        .btn-details:hover {
+            background: #dbeafe;
+            border-color: #93c5fd;
+        }
+
+        .btn-groups {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .btn-groups:hover {
+            background: #dcfce7;
+            border-color: #86efac;
+        }
+
+        .btn-edit {
+            background: #fef3c7;
+            border-color: #fde047;
+            color: #854d0e;
+        }
+
+        .btn-edit:hover {
+            background: #fef08a;
+            border-color: #facc15;
+        }
+
+        .btn-delete {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #dc2626;
+        }
+
+        .btn-delete:hover {
+            background: #fee2e2;
+            border-color: #fca5a5;
+        }
+
         .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
         .card-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
 
@@ -727,6 +866,114 @@
             padding: 20px 0;
             font-size: 13px;
         }
+
+        /* ====== USER TABS (ACTIVE/INACTIVE) ====== */
+        .user-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0;
+        }
+
+        .user-tab {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            background: transparent;
+            color: #64748b;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: -2px;
+        }
+
+        .user-tab:hover {
+            color: #334155;
+            background: #f8fafc;
+        }
+
+        .user-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: #f8fafc;
+        }
+
+        /* ====== STATUS BADGES ====== */
+        .badge-active {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .badge-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        /* ====== COMPACT ACTION BUTTONS ====== */
+        .btn-action {
+            padding: 6px 10px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-right: 4px;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-details {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e40af;
+        }
+
+        .btn-details:hover {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+
+        .btn-groups {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .btn-groups:hover {
+            background: #dcfce7;
+            border-color: #10b981;
+        }
+
+        .btn-edit {
+            background: #fef3c7;
+            border-color: #fde047;
+            color: #854d0e;
+        }
+
+        .btn-edit:hover {
+            background: #fef08a;
+            border-color: #facc15;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
+            border-color: #ef4444;
+        }
     </style>
 </head>
 <body>
@@ -755,9 +1002,13 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>
                     Parcourir LDAP
                 </div>
-                <div class="nav-item" onclick="showSection('users')">
+                <div class="nav-item" onclick="showSection('users-active')">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    Utilisateurs
+                    Utilisateurs actifs
+                </div>
+                <div class="nav-item" onclick="showSection('users-inactive')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Utilisateurs inactifs
                 </div>
                 <div class="nav-item" onclick="showSection('groups')">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -799,20 +1050,30 @@
                     </div>
                 </div>
 
-                <!-- Users -->
-                <div id="users" class="section">
-                    <h2 style="margin-bottom: 24px; color: #1e293b;">Gestion des utilisateurs</h2>
+                <!-- Users Active -->
+                <div id="users-active" class="section">
+                    <h2 style="margin-bottom: 24px; color: #1e293b;">✅ Gestion des utilisateurs actifs</h2>
+                    
                     <div class="search-bar">
-                        <input type="text" id="userSearch" placeholder="Rechercher un utilisateur...">
-                        <button class="btn btn-primary" onclick="searchUsers()">Rechercher</button>
+                        <input type="text" id="userSearchActive" placeholder="Rechercher un utilisateur actif...">
+                        <button class="btn btn-primary" onclick="searchUsers('active')">Rechercher</button>
                         <button class="btn btn-success" onclick="showModal('addUserModal')">Nouvel utilisateur</button>
                     </div>
                     <div class="card">
-                        <!-- La table et la pagination sont injectées dynamiquement dans .table-wrapper -->
-                        <table id="usersTable">
-                            <thead><tr><th>Nom</th><th>Email</th><th>UID</th><th>Login (supann)</th><th>Actions</th></tr></thead>
-                            <tbody id="usersTableBody"></tbody>
-                        </table>
+                        <!-- Content injected dynamically -->
+                    </div>
+                </div>
+
+                <!-- Users Inactive -->
+                <div id="users-inactive" class="section">
+                    <h2 style="margin-bottom: 24px; color: #1e293b;">⚠️ Gestion des utilisateurs inactifs (à supprimer)</h2>
+                    
+                    <div class="search-bar">
+                        <input type="text" id="userSearchInactive" placeholder="Rechercher un utilisateur inactif...">
+                        <button class="btn btn-primary" onclick="searchUsers('inactive')">Rechercher</button>
+                    </div>
+                    <div class="card">
+                        <!-- Content injected dynamically -->
                     </div>
                 </div>
 

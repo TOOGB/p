@@ -326,7 +326,7 @@ app.get('/api/ldap/has-children', authenticateJWT, async (req, res) => {
 // ============ GESTION DES UTILISATEURS - AVEC PAGINATION ============
 
 app.get('/api/ldap/users/search', authenticateJWT, async (req, res) => {
-    const { query, page = 1, pageSize = 25 } = req.query;
+    const { query, page = 1, pageSize = 25, status = 'active' } = req.query;
     const client = createLdapClient();
     const actualPageSize = Math.min(parseInt(pageSize) || 25, 200);
     const currentPage = Math.max(parseInt(page) || 1, 1);
@@ -341,7 +341,7 @@ app.get('/api/ldap/users/search', authenticateJWT, async (req, res) => {
             filter = '(objectClass=inetOrgPerson)';
         }
 
-        // Récupérer toutes les entrées puis paginer côté serveur
+        // Récupérer toutes les entrées puis filtrer côté serveur
         const result = await ldapSearchPaginated(client, LDAP_CONFIG.BASE_DN, {
             filter,
             scope: 'sub',
@@ -350,14 +350,24 @@ app.get('/api/ldap/users/search', authenticateJWT, async (req, res) => {
 
         client.unbind();
 
-        const allEntries = result.entries;
-        const totalCount = allEntries.length;
+        // Filtrer selon le statut (actif/inactif)
+        let filteredEntries = result.entries;
+        if (status === 'inactive') {
+            // Utilisateurs inactifs : DN contient "toDelete"
+            filteredEntries = result.entries.filter(user => user.dn.toLowerCase().includes('todelete'));
+        } else if (status === 'active') {
+            // Utilisateurs actifs : DN ne contient PAS "toDelete"
+            filteredEntries = result.entries.filter(user => !user.dn.toLowerCase().includes('todelete'));
+        }
+        // Si status === 'all', on garde tous les résultats
+
+        const totalCount = filteredEntries.length;
         const totalPages = Math.ceil(totalCount / actualPageSize);
         const startIndex = (currentPage - 1) * actualPageSize;
         const endIndex = Math.min(startIndex + actualPageSize, totalCount);
-        const paginatedEntries = allEntries.slice(startIndex, endIndex);
+        const paginatedEntries = filteredEntries.slice(startIndex, endIndex);
 
-        await logActivity(req.user.username, 'user_search', { query, page: currentPage, pageSize: actualPageSize, totalCount });
+        await logActivity(req.user.username, 'user_search', { query, page: currentPage, pageSize: actualPageSize, totalCount, status });
 
         res.json({
             success: true,
@@ -372,7 +382,8 @@ app.get('/api/ldap/users/search', authenticateJWT, async (req, res) => {
                 hasPreviousPage: currentPage > 1,
                 startIndex,
                 endIndex
-            }
+            },
+            status
         });
 
     } catch (error) {

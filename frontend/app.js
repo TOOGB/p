@@ -8,7 +8,8 @@ let currentParentDN = null;
 
 // États de pagination par section
 const paginationState = {
-    users:  { page: 1, pageSize: 25, query: '', totalCount: 0, totalPages: 0 },
+    usersActive:   { page: 1, pageSize: 25, query: '', totalCount: 0, totalPages: 0 },
+    usersInactive: { page: 1, pageSize: 25, query: '', totalCount: 0, totalPages: 0 },
     groups: { page: 1, pageSize: 25, query: '', totalCount: 0, totalPages: 0 },
     search: { page: 1, pageSize: 25, lastParams: null, totalCount: 0, totalPages: 0 },
     logs:   { page: 1, pageSize: 25, totalCount: 0, totalPages: 0 }
@@ -104,7 +105,8 @@ function showSection(id) {
     switch(id) {
         case 'dashboard': loadDashboardData(); break;
         case 'browse': currentTreePage = 1; currentParentDN = null; loadLDAPTree(); break;
-        case 'users': paginationState.users.page = 1; loadUsers(); break;
+        case 'users-active': paginationState.usersActive.page = 1; loadUsers('active'); break;
+        case 'users-inactive': paginationState.usersInactive.page = 1; loadUsers('inactive'); break;
         case 'groups': paginationState.groups.page = 1; loadGroups(); break;
         case 'logs': paginationState.logs.page = 1; loadLogs(); break;
     }
@@ -709,81 +711,135 @@ function filterTree() {
 }
 
 // ============ UTILISATEURS AVEC PAGINATION ============
-async function loadUsers(page = null) {
+async function loadUsers(status = 'active', page = null) {
     if (!currentToken) return;
-    if (page !== null) paginationState.users.page = page;
-    const state = paginationState.users;
+    
+    const stateKey = status === 'active' ? 'usersActive' : 'usersInactive';
+    const state = paginationState[stateKey];
+    
+    if (page !== null) state.page = page;
+    
     try {
-        const params = new URLSearchParams({ page: state.page, pageSize: state.pageSize });
+        // Envoyer le paramètre status au serveur pour filtrage côté serveur
+        const params = new URLSearchParams({ 
+            page: state.page, 
+            pageSize: state.pageSize,
+            status: status  // Ajout du paramètre status
+        });
         if (state.query) params.append('query', state.query);
+        
         const data = await apiRequest(`/ldap/users/search?${params.toString()}`);
+        
+        // Le filtrage est fait côté serveur, pas besoin de re-filtrer ici
+        const users = data.users || data.entries || [];
+        
         state.totalCount = data.pagination?.totalCount || 0;
         state.totalPages = data.pagination?.totalPages || 0;
-        renderUsers(data.users || data.entries, data.pagination);
+        
+        renderUsers(users, data.pagination, status);
     } catch (error) {
         showToast('Erreur lors du chargement des utilisateurs', 'error');
     }
 }
 
-function renderUsers(users, pagination) {
-    const section = document.getElementById('users');
-    let tableWrapper = section.querySelector('.table-wrapper');
-    if (!tableWrapper) { tableWrapper = document.createElement('div'); tableWrapper.className = 'table-wrapper'; section.querySelector('.card').appendChild(tableWrapper); }
+
+function renderUsers(users, pagination, status = 'active') {
+    const sectionId = status === 'active' ? 'users-active' : 'users-inactive';
+    const section = document.getElementById(sectionId);
+    const stateKey = status === 'active' ? 'usersActive' : 'usersInactive';
+    
+    let tableWrapper = section.querySelector('.card');
+    if (!tableWrapper) {
+        tableWrapper = document.createElement('div');
+        tableWrapper.className = 'card';
+        section.appendChild(tableWrapper);
+    }
     tableWrapper.innerHTML = '';
 
     if (!users || users.length === 0) {
-        tableWrapper.innerHTML = '<p class="no-data">Aucun utilisateur trouvé</p>';
+        tableWrapper.innerHTML = `<p class="no-data">Aucun utilisateur ${status === 'active' ? 'actif' : 'inactif'} trouvé</p>`;
     } else {
         const table = document.createElement('table');
-        table.innerHTML = `<thead><tr><th>Nom</th><th>Email</th><th>UID</th><th>Login (supann)</th><th>Actions</th></tr></thead>
-            <tbody>${users.map(user => {
-                const uid = user.attributes?.uid || user.dn.match(/uid=([^,]+)/)?.[1] || 'N/A';
-                const cn = user.attributes?.cn || 'N/A';
-                const mail = user.attributes?.mail || 'N/A';
-                const supann = user.attributes?.supannAliasLogin || '';
-                const dn = user.dn;
-                const dnEscaped = dn.replace(/`/g, '\\`').replace(/'/g, "\\'");
-                const supannEscaped = supann.replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                return `<tr>
-                    <td>${cn}</td>
-                    <td>${mail}</td>
-                    <td>${uid}</td>
-                    <td>
-                        ${supann
-                            ? `<span class="supann-login">${supann}</span>
-                               <button class="btn-icon" title="Copier le login" onclick='copySupann(\`${supannEscaped}\`)'>📋</button>`
-                            : '<span class="text-muted">—</span>'}
-                    </td>
-                    <td class="actions-cell">
-                        <button class="btn btn-group-add" title="Gérer les groupes" onclick='manageUserGroups(\`${dnEscaped}\`, "${cn.replace(/"/g, '&quot;')}")'>👥 Groupes</button>
-                        <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick='editUser(\`${dnEscaped}\`)'>Éditer</button>
-                        <button class="btn btn-danger" style="padding:6px 12px;font-size:12px" onclick='deleteUser(\`${dnEscaped}\`)'>Supprimer</button>
-                    </td>
-                </tr>`;
-            }).join('')}</tbody>`;
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>UID</th>
+                    <th>Login (supann)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>${renderUserRows(users, status)}</tbody>
+        `;
         tableWrapper.appendChild(table);
     }
 
     if (pagination && pagination.totalPages > 1) {
         const bar = createPaginationBar(
             pagination,
-            (p) => loadUsers(p),
-            (s) => { paginationState.users.pageSize = s; loadUsers(1); }
+            (p) => loadUsers(status, p),
+            (s) => { paginationState[stateKey].pageSize = s; loadUsers(status, 1); }
         );
         tableWrapper.appendChild(bar);
     }
-
-    const staticTbody = document.getElementById('usersTableBody');
-    if (staticTbody) staticTbody.innerHTML = '';
 }
 
-async function searchUsers() {
+function renderUserRows(users, status = 'active') {
+    return users.map(user => {
+        const uid = user.attributes?.uid || user.dn.match(/uid=([^,]+)/)?.[1] || 'N/A';
+        const cn = user.attributes?.cn || 'N/A';
+        const mail = user.attributes?.mail || 'N/A';
+        const supann = user.attributes?.supannAliasLogin || '';
+        const dn = user.dn;
+        const dnEscaped = dn.replace(/`/g, '\\`').replace(/'/g, "\\'");
+        const supannEscaped = supann.replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const isInactive = status === 'inactive';
+        
+        return `<tr class="${isInactive ? 'user-row-inactive' : ''}">
+            <td>${cn}</td>
+            <td>${mail}</td>
+            <td>${uid}</td>
+            <td>
+                ${supann
+                    ? `<span class="supann-login">${supann}</span>
+                       <button class="btn-icon" title="Copier le login" onclick='copySupann(\`${supannEscaped}\`)'>📋</button>`
+                    : '<span class="text-muted">—</span>'}
+            </td>
+            <td class="actions-cell">
+                <button class="btn-action btn-details" title="Voir les détails" onclick='showUserDetails(\`${dnEscaped}\`)'>🔍 Détails</button>
+                <button class="btn-action btn-groups" title="Gérer les groupes" onclick='manageUserGroups(\`${dnEscaped}\`, "${cn.replace(/"/g, '&quot;')}")'>👥 Groupes</button>
+                <button class="btn-action btn-edit" title="Éditer" onclick='editUser(\`${dnEscaped}\`)'>✏️ Éditer</button>
+                <button class="btn-action btn-delete" title="Supprimer" onclick='deleteUser(\`${dnEscaped}\`)'>🗑️ Supprimer</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+async function showUserDetails(dn) {
     if (!currentToken) { showToast('Veuillez vous connecter d\'abord', 'error'); return; }
-    const query = document.getElementById('userSearch').value;
-    paginationState.users.query = query;
-    paginationState.users.page = 1;
-    await loadUsers();
-    showToast(`Recherche effectuée : ${paginationState.users.totalCount} résultat(s)`, 'success');
+    try {
+        const data = await apiRequest(`/ldap/users/${encodeURIComponent(dn)}`);
+        const user = data.user || data;
+        showEntryDetails(user);
+    } catch (error) {
+        showToast('Erreur lors du chargement des détails', 'error');
+    }
+}
+
+async function searchUsers(status = 'active') {
+    if (!currentToken) { showToast('Veuillez vous connecter d\'abord', 'error'); return; }
+    
+    const inputId = status === 'active' ? 'userSearchActive' : 'userSearchInactive';
+    const query = document.getElementById(inputId).value;
+    const stateKey = status === 'active' ? 'usersActive' : 'usersInactive';
+    
+    paginationState[stateKey].query = query;
+    paginationState[stateKey].page = 1;
+    
+    await loadUsers(status);
+    const totalCount = paginationState[stateKey].totalCount;
+    showToast(`Recherche effectuée : ${totalCount} résultat(s)`, 'success');
 }
 
 async function createUser() {
