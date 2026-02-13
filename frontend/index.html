@@ -1122,8 +1122,9 @@
                 <div id="logs" class="section">
                     <h2 style="margin-bottom: 24px; color: #1e293b;">Journaux d'activité</h2>
                     <div class="search-bar">
-                        <input type="text" id="logSearch" placeholder="Filtrer les logs...">
-                        <button class="btn btn-primary" onclick="loadLogs()">Rafraîchir</button>
+                        <input type="text" id="logSearch" placeholder="Filtrer par action ou utilisateur..." onkeypress="if(event.key==='Enter') searchLogs()">
+                        <button class="btn btn-primary" onclick="searchLogs()">Rechercher</button>
+                        <button class="btn btn-secondary" onclick="loadLogs()">Rafraîchir</button>
                         <button class="btn btn-danger" onclick="clearLogs()">Effacer les logs</button>
                     </div>
                     <div class="card">

@@ -725,7 +725,7 @@ app.get('/api/stats', authenticateJWT, async (req, res) => {
 // ============ JOURNAUX (LOGS) - AVEC PAGINATION ============
 
 app.get('/api/logs', authenticateJWT, async (req, res) => {
-    const { page = 1, pageSize = 25, action, status, userId } = req.query;
+    const { page = 1, pageSize = 25, action, status, userId, query } = req.query;
     const actualPageSize = Math.min(parseInt(pageSize) || 25, 200);
     const currentPage = Math.max(parseInt(page) || 1, 1);
     const offset = (currentPage - 1) * actualPageSize;
@@ -737,7 +737,17 @@ app.get('/api/logs', authenticateJWT, async (req, res) => {
         const params = [];
         let paramCount = 1;
 
-        if (action) {
+        // Support de la recherche générale (query)
+        if (query && query.trim() !== '') {
+            // Recherche dans action OU user_id
+            countQuery += ` AND (action ILIKE $${paramCount} OR user_id ILIKE $${paramCount})`;
+            dataQuery += ` AND (action ILIKE $${paramCount} OR user_id ILIKE $${paramCount})`;
+            params.push(`%${query}%`);
+            paramCount++;
+        }
+
+        // Filtres spécifiques (pour compatibilité avec l'ancien code)
+        if (action && !query) {
             countQuery += ` AND action = $${paramCount}`;
             dataQuery += ` AND action = $${paramCount}`;
             params.push(action);
@@ -749,7 +759,7 @@ app.get('/api/logs', authenticateJWT, async (req, res) => {
             params.push(status);
             paramCount++;
         }
-        if (userId) {
+        if (userId && !query) {
             countQuery += ` AND user_id = $${paramCount}`;
             dataQuery += ` AND user_id = $${paramCount}`;
             params.push(userId);

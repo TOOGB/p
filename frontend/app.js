@@ -12,7 +12,7 @@ const paginationState = {
     usersInactive: { page: 1, pageSize: 25, query: '', totalCount: 0, totalPages: 0 },
     groups: { page: 1, pageSize: 25, query: '', totalCount: 0, totalPages: 0 },
     search: { page: 1, pageSize: 25, lastParams: null, totalCount: 0, totalPages: 0 },
-    logs:   { page: 1, pageSize: 25, totalCount: 0, totalPages: 0 }
+    logs:   { page: 1, pageSize: 25, query: '', totalCount: 0, totalPages: 0 }
 };
 
 const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin;
@@ -1137,6 +1137,12 @@ async function loadLogs(page = null) {
     const state = paginationState.logs;
     try {
         const params = new URLSearchParams({ page: state.page, pageSize: state.pageSize });
+        
+        // Ajouter le filtre de recherche si présent
+        if (state.query && state.query.trim() !== '') {
+            params.append('query', state.query.trim());
+        }
+        
         const data = await apiRequest(`/logs?${params.toString()}`);
         state.totalCount = data.pagination?.totalCount || 0;
         state.totalPages = data.pagination?.totalPages || 0;
@@ -1199,9 +1205,25 @@ async function clearLogs() {
         const data = await apiRequest('/logs/all?confirmation=YES_DELETE_ALL_LOGS', { method: 'DELETE' });
         showToast(data.message || 'Logs effacés avec succès', 'success');
         paginationState.logs.page = 1;
+        paginationState.logs.query = '';
+        document.getElementById('logSearch').value = '';
         loadLogs();
     } catch (error) {
         showToast(error.message || 'Erreur lors de l\'effacement des logs', 'error');
+    }
+}
+
+async function searchLogs() {
+    if (!currentToken) { showToast('Veuillez vous connecter d\'abord', 'error'); return; }
+    
+    const query = document.getElementById('logSearch').value.trim();
+    paginationState.logs.query = query;
+    paginationState.logs.page = 1;
+    
+    await loadLogs();
+    
+    if (query) {
+        showToast(`Recherche : "${query}" - ${paginationState.logs.totalCount} résultat(s)`, 'success');
     }
 }
 
